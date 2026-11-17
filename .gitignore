@@ -1,0 +1,7 @@
+node_modules/
+out/
+.env
+coverage/
+dist/
+.perxia/
+*.log
