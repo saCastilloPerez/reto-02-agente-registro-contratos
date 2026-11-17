@@ -14,6 +14,23 @@ export class AgentRuntime {
   history(id: string): HistoryItem[] { return this.sessions.get(id)?.history ?? [] }
   private session(id: string): Session { const existing = this.sessions.get(id); if (existing) return existing; const next = { history: [], busy: false }; this.sessions.set(id, next); return next }
   private context(sessionId: string): ToolContext { return { directory: this.directory, sessionId } }
+  private confirmedContract(contract: Contract, message: string): Contract {
+    const fechaFin = message.match(/fecha\s*(?:de\s*)?fin\s*(?:es|=|:)?\s*(\d{4}-\d{2}-\d{2})/i)?.[1]
+    const valor = message.match(/valor\s*(?:es|=|:)?\s*([\d.,]+)/i)?.[1]
+    const moneda = message.match(/\b(COP|USD|PEN|PAB|HNL)\b/i)?.[1] as Contract['moneda'] | undefined
+    const parsedValue = valor ? Number(valor.replace(/[,.]/g, '')) : undefined
+    const confianza = { ...contract.confianza }
+    if (fechaFin) confianza.fecha_fin = 1
+    if (parsedValue !== undefined && Number.isFinite(parsedValue)) confianza.valor = 1
+    if (moneda) confianza.moneda = 1
+    return {
+      ...contract,
+      fecha_fin: fechaFin ?? contract.fecha_fin,
+      valor: parsedValue !== undefined && Number.isFinite(parsedValue) ? parsedValue : contract.valor,
+      moneda: moneda ?? contract.moneda,
+      confianza
+    }
+  }
   private async call(session: Session, sessionId: string, name: keyof typeof contratosTools, args: never, calls: VisibleToolCall[]): Promise<{ ok: boolean; data?: unknown; error?: string }> {
     const raw = await contratosTools[name].execute(args, this.context(sessionId))
     const result = JSON.parse(raw) as { ok: boolean; data?: unknown; error?: string }
@@ -30,8 +47,9 @@ export class AgentRuntime {
     const calls: VisibleToolCall[] = []
     try {
       if (session.pending && /^(si|sí|confirmo|confirmar|autorizo|adelante)/i.test(message.trim())) {
-        const registered = await this.call(session, sessionId, 'registrar', { mensaje_id: session.pending.mensajeId, contrato: session.pending.contrato, confirmado: true } as never, calls)
         const pending = session.pending
+        const confirmed = this.confirmedContract(pending.contrato, message)
+        const registered = await this.call(session, sessionId, 'registrar', { mensaje_id: pending.mensajeId, contrato: confirmed, confirmado: true } as never, calls)
         session.pending = undefined
         const lines = [registered.ok ? `Confirmación aplicada: ${pending.mensajeId} quedó registrado como ${(registered.data as { accion: string }).accion}.` : `No fue posible registrar: ${registered.error}`]
         if (pending.requestedAlerts && registered.ok) {

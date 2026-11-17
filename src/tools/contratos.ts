@@ -60,6 +60,14 @@ function country(text: string): Contract['pais'] { if (/ecuador|\bRUC\s+17/i.tes
 function numberFromWords(value: string): number | null { const compact = clean(value).replace(/\s+/g, ' ').trim(); return words[compact] ?? null }
 function derivedDate(start: string | null, months: number | null): string | null { if (!start || !months) return null; const date = new Date(`${start}T00:00:00Z`); date.setUTCMonth(date.getUTCMonth() + months); date.setUTCDate(date.getUTCDate() - 1); return date.toISOString().slice(0, 10) }
 function confidence(value: unknown, score = 1): number { return value === null || value === '' ? 0 : score }
+function parseContractValue(rawValue: string, currency: string): number | null {
+  const compact = rawValue.replace(/\s/g, '')
+  if (!compact) return null
+  if (currency === 'COP') return Number(compact.replace(/[,.]/g, ''))
+  const normalized = compact.replace(/,/g, '')
+  const value = Number(normalized)
+  return Number.isFinite(value) ? Math.trunc(value) : null
+}
 
 function extract(text: string, email: Email, commercial: Commercial | undefined): Contract {
   const isAddendum = /OTROS[IÍ]/i.test(text)
@@ -70,7 +78,7 @@ function extract(text: string, email: Email, commercial: Commercial | undefined)
   const demand = /no tiene un valor determinado|por demanda/i.test(text)
   const currency = text.match(/\b(COP|USD|PEN|PAB|HNL)\s*\$?\s*([\d,.]+)/i)
   const rawValue = currency?.[2] ?? ''
-  const value = demand ? 0 : currency ? Number(rawValue.replace(/[,.]/g, '')) : null
+  const value = demand ? 0 : currency ? parseContractValue(rawValue, currency[1].toUpperCase()) : null
   const startPhrase = text.match(/desde\s+(?:el\s+)?([^\n]+?de\s+[a-záéíóú]+\s+de\s+\d{4})/i)?.[1]
   const endPhrase = text.match(/hasta\s+(?:el\s+)?([^\n."]+?de\s+[a-záéíóú]+\s+de\s+\d{4})/i)?.[1]
   const parsedStart = startPhrase ? parseSpanishDate(startPhrase) : null

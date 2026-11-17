@@ -15,3 +15,4 @@ if (!first.needsConfirmation) throw new Error('El primer turno no solicitó la c
 const second = await runtime.chat('opencode-e2e', 'Confirmo el valor 0 y la fecha fin 2027-08-31 para msg-006.')
 console.log(JSON.stringify({ phase: 'confirmation', reply: second.reply, needsConfirmation: second.needsConfirmation, toolCalls: second.toolCalls.map((call) => call.name) }, null, 2))
 if (!second.toolCalls.some((call) => call.name === 'contratos_alertas')) throw new Error('La confirmación no generó el reporte de alertas solicitado en el primer turno.')
+if (!second.reply.includes('Confirmación aplicada')) throw new Error('La confirmación humana no concluyó el registro de msg-006.')
