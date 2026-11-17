@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
+import { access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
@@ -18,6 +19,15 @@ app.use(express.json({ limit: '32kb' }))
 app.use(express.static(path.join(directory, 'web')))
 app.get('/api/health', (_request, response) => response.json({ ok: true, provider: adapter.provider, model: adapter.model, configured: adapter.configured }))
 app.get('/api/sessions/:id', (request, response) => response.json({ sessionId: request.params.id, history: runtime.history(request.params.id) }))
+app.get('/api/artifacts/alertas', async (_request, response) => {
+  const alertas = path.join(directory, 'out', 'alertas.md')
+  try {
+    await access(alertas)
+    return response.download(alertas, 'alertas.md')
+  } catch {
+    return response.status(404).json({ error: 'El reporte de alertas todavía no ha sido generado.' })
+  }
+})
 app.post('/api/chat', async (request, response) => {
   const parsed = requestSchema.safeParse(request.body)
   if (!parsed.success) return response.status(400).json({ error: 'Solicitud inválida.' })

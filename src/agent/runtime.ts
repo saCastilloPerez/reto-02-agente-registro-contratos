@@ -48,13 +48,14 @@ export class AgentRuntime {
         message,
         allowedIntents: ['procesar_buzon', 'alertas', 'confirmar', 'rechazar', 'ayuda']
       })
-      if (interpretation.intent === 'alertas') {
+      const explicitlyRequestsInbox = /buz[oó]n|procesa(?:r)?\s+(?:el\s+)?(?:buz[oó]n|contrato)/i.test(message)
+      if (interpretation.intent === 'alertas' && !explicitlyRequestsInbox) {
         const date = message.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? '2026-09-03'
         const result = await this.call(session, sessionId, 'alertas', { hoy: date } as never, calls)
         const reply = result.ok ? `Reporte generado en ${(result.data as { ruta: string }).ruta}.` : `No fue posible generar alertas: ${result.error}`
         session.history.push({ role: 'assistant', content: reply }); return { reply, toolCalls: calls, needsConfirmation: false }
       }
-      if (interpretation.intent !== 'procesar_buzon') {
+      if (interpretation.intent !== 'procesar_buzon' && !explicitlyRequestsInbox) {
         const reply = 'Puedo procesar el buzón, mostrar contratos en revisión o generar alertas. Indica “procesa el buzón”.'
         session.history.push({ role: 'assistant', content: reply }); return { reply, toolCalls: calls, needsConfirmation: false }
       }

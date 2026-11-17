@@ -31,7 +31,10 @@ function add(role, text, confirmation = false) {
 function addTool(call) {
   const item = document.createElement('article')
   item.className = `tool${call.result?.ok ? '' : ' error'}`
-  item.innerHTML = `<strong>${escapeHtml(call.name)}</strong><p>${escapeHtml(summarizeTool(call))}</p><details><summary>Ver argumentos y resultado</summary><pre>${escapeHtml(JSON.stringify({ argumentos: call.arguments, resultado: call.result }, null, 2))}</pre></details>`
+  const download = call.name === 'contratos_alertas' && call.result?.ok
+    ? '<a class="download" href="/api/artifacts/alertas">Descargar alertas.md</a>'
+    : ''
+  item.innerHTML = `<strong>${escapeHtml(call.name)}</strong><p>${escapeHtml(summarizeTool(call))}</p>${download}<details><summary>Ver argumentos y resultado</summary><pre>${escapeHtml(JSON.stringify({ argumentos: call.arguments, resultado: call.result }, null, 2))}</pre></details>`
   chat.append(item)
   chat.scrollTop = chat.scrollHeight
 }
