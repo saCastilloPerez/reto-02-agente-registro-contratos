@@ -19,6 +19,16 @@ npm run demo
 
 La demo no usa una clave de LLM: limpia `out/`, procesa los seis mensajes, confirma `msg-006` en segunda pasada y genera `out/alertas.md`.
 
+## Reiniciar una demostración
+
+El procesamiento deja estado en `out/` para evitar reprocesar correos. Antes de repetir la demostración completa, ejecuta:
+
+```bash
+npm run reset
+```
+
+Este comando elimina únicamente `out/`; nunca modifica `fixtures/`.
+
 ## Modelo y variables
 
 Copiar `.env.example` a `.env` si se desea cambiar puerto o topes. El valor por defecto `LLM_PROVIDER=perxia` activa `DeterministicPerxiaAdapter`: interpreta intenciones locales, no consume API ni requiere credenciales, y es el modo recomendado para demo y defensa.

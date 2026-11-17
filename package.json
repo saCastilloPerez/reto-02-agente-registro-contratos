@@ -8,6 +8,7 @@
     "dev": "tsx src/server.ts",
     "start": "tsx src/server.ts",
     "demo": "tsx demo.ts",
+    "reset": "tsx reset.ts",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
